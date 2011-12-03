@@ -17,7 +17,7 @@ from django.contrib.sites.managers import CurrentSiteManager
 from rapidsms.models import ExtensibleModelBase
 from eav.fields import EavSlugField
 from django.core.files.base import ContentFile
-from django.contrib.auth.models import Group
+from groups.models import Group
 from django.conf import settings
 
 class XForm(models.Model):
