@@ -25,7 +25,7 @@ def submissions_as_csv(req, pk):
     fields = xform.fields.all().order_by('pk')
 
     resp = render_to_response(
-        "xforms/submissions.csv", 
+        "xforms/submissions.csv",
         {'xform': xform, 'submissions': submissions, 'fields': fields},
         mimetype="text/csv",
         context_instance=RequestContext(req))
@@ -45,10 +45,10 @@ def odk_list_forms(req):
     for form in XForm.on_site.filter(active=True):
         if form.does_user_have_permission(req.user):
             xforms.append(form)
-        
+
     return render_to_response(
-        "xforms/odk_list_forms.xml", 
-        { 'xforms': xforms, 'host':  settings.XFORMS_HOST }, 
+        "xforms/odk_list_forms.xml",
+        { 'xforms': xforms, 'host':  settings.XFORMS_HOST },
         mimetype="text/xml",
         context_instance=RequestContext(req))
 
@@ -59,13 +59,13 @@ def odk_get_form(req, pk):
         authenticator = HttpDigestAuthenticator()
         if not authenticator.authenticate(req):
             return authenticator.build_challenge_response()
-    
+
     xform = get_object_or_404(XForm, pk=pk)
     if not xform.does_user_have_permission(req.user):
         return HttpResponse("You do not have permission to view this form", status=403)
-    
+
     resp = render_to_response(
-        "xforms/odk_get_form.xml", { 'xform': xform }, 
+        "xforms/odk_get_form.xml", { 'xform': xform },
         mimetype="text/xml",
         context_instance=RequestContext(req))
     resp['Content-Disposition'] = 'attachment;filename="%s.xml"' % xform.keyword
@@ -86,7 +86,7 @@ def odk_submission(req):
     elif req.method != 'POST':
         # only POST and HEAD are supported
         return HttpResponse("Invalid method", status=405)
-    
+
     values = {}
     xform = None
     raw = ""
@@ -101,7 +101,7 @@ def odk_submission(req):
             tag = child.tagName
             if child.childNodes:
                 body = child.childNodes[0].wholeText
-            
+
                 if tag == 'xform-keyword':
                     xform = get_object_or_404(XForm, keyword=body)
                 else:
@@ -122,7 +122,7 @@ def odk_submission(req):
     submission = xform.process_odk_submission(raw, values, binaries)
 
     resp = render_to_response(
-        "xforms/odk_submission.xml", 
+        "xforms/odk_submission.xml",
         { "xform": xform, "submission": submission },
         context_instance=RequestContext(req))
 
@@ -136,11 +136,11 @@ def odk_submission(req):
 
 
 @require_GET
-def xforms(req): 
+def xforms(req):
     xforms = XForm.on_site.all()
     breadcrumbs = (('XForms', ''),)
     return render_to_response(
-        "xforms/form_index.html", 
+        "xforms/form_index.html",
         { 'xforms': xforms, 'breadcrumbs': breadcrumbs },
         context_instance=RequestContext(req))
 
@@ -164,7 +164,7 @@ def XFormForm(*args, **kwargs):
                 raise forms.ValidationError("You must enter a message to display if you are restricting the form.")
 
             return cleaned
-        
+
         class Meta:
             model = XForm
             fields = form_fields
@@ -173,21 +173,21 @@ def XFormForm(*args, **kwargs):
         layout = Layout(
             # required fields
             Fieldset(*required_fields),
-            
+
             # optional attributes
-            Fieldset('Advanced Settings',
-                     'keyword_prefix',
-                     'command_prefix',
-                     'separator',
-                     ),
-            
-            # security
-            Fieldset('Security',
-                     'restrict_to',
-                     'restrict_message',
-                     )        
+            # Fieldset('Advanced Settings',
+            #          'keyword_prefix',
+            #          'command_prefix',
+            #          'separator',
+            #          ),
+
+            # # security
+            # Fieldset('Security',
+            #          'restrict_to',
+            #          'restrict_message',
+            #          )
             )
-    
+
         helper.add_layout(layout)
 
     return CustomXFormForm(*args, **kwargs)
@@ -223,7 +223,7 @@ def view_form(req, form_id):
     xform = XForm.on_site.get(pk=form_id)
     fields = XFormField.objects.order_by('order').filter(xform=xform)
     breadcrumbs = (('XForms', '/xforms/'),('Edit Form', ''))
-    return render_to_response("xforms/form_view.html", 
+    return render_to_response("xforms/form_view.html",
         { 'xform': xform, 'fields': fields, 'field_count' : len(fields), 'breadcrumbs' : breadcrumbs },
         context_instance=RequestContext(req))
 
@@ -244,13 +244,13 @@ def edit_form(req, form_id):
         form = XFormForm(req.POST, instance=xform)
         if form.is_valid():
             xform = form.save()
-            return render_to_response("xforms/form_details.html", 
+            return render_to_response("xforms/form_details.html",
                 {"xform" : xform},
                 context_instance=RequestContext(req))
     else:
         form = XFormForm(instance=xform)
 
-    return render_to_response("xforms/form_edit.html", 
+    return render_to_response("xforms/form_edit.html",
         { 'form': form, 'xform': xform, 'fields': fields, 'field_count' : len(fields), 'breadcrumbs' : breadcrumbs },
         context_instance=RequestContext(req))
 
@@ -264,13 +264,13 @@ def order_xform (req, form_id):
             field.order = count
             count = count + 1
             field.save()
-            
-        return render_to_response("xforms/ajax_complete.html", 
+
+        return render_to_response("xforms/ajax_complete.html",
             {'ids' : field_ids},
             context_instance=RequestContext(req))
 
 class FieldForm(forms.ModelForm):
-    
+
     def updateTypes(self):
         self.fields['field_type'].widget.choices = [(choice['type'], choice['label']) for choice in XFormField.TYPE_CHOICES.values()]
 
@@ -287,7 +287,7 @@ class ConstraintForm(forms.ModelForm):
         model = XFormFieldConstraint
         fields = ('type', 'test', 'message') # Why do we need order?
 
-@csrf_exempt        
+@csrf_exempt
 def add_field(req, form_id):
     xform = XForm.on_site.get(pk=form_id)
     fields = XFormField.objects.filter(xform=xform)
@@ -300,14 +300,14 @@ def add_field(req, form_id):
             field.xform = xform
             field.order = len(fields)
             field.save()
-            return render_to_response("xforms/field_view.html", 
+            return render_to_response("xforms/field_view.html",
                 {'field' : field, 'xform' : xform },
                 context_instance=RequestContext(req))
     else:
         form = FieldForm()
         form.updateTypes()
 
-    return render_to_response("xforms/field_edit.html", 
+    return render_to_response("xforms/field_edit.html",
         { 'form': form, 'xform': xform },
         context_instance=RequestContext(req))
 
@@ -325,7 +325,7 @@ def view_submissions(req, form_id):
 
     paginator = Paginator(submissions, 25)
     page = paginator.page(current_page)
-    
+
     return render_to_response("xforms/submissions.html",
                               dict(xform=xform, fields=fields, submissions=page, breadcrumbs=breadcrumbs,
                                    paginator=paginator, page=page),
@@ -368,7 +368,7 @@ def make_submission_form(xform):
                         cleaned_val = field.clean_submission(field_val, 'sms')
                         cleaned_data[command] = cleaned_val
                     except ValidationError as err:
-                        # if there is an error, remove it from our cleaned data and 
+                        # if there is an error, remove it from our cleaned data and
                         # add the error to our list of errors for this form
                         self._errors[field.command] = self.error_class(err.messages)
                         del cleaned_data[field.command]
@@ -414,7 +414,7 @@ def edit_submission(req, submission_id):
 
     breadcrumbs = (('XForms', '/xforms/'),('Submissions', '/xforms/%d/submissions/' % xform.pk), ('Edit Submission', ''))
 
-    return render_to_response("xforms/submission_edit.html", 
+    return render_to_response("xforms/submission_edit.html",
         { 'xform': xform, 'submission': submission,
         'fields': fields, 'values': values, 'form': form,
         'breadcrumbs': breadcrumbs },
@@ -423,10 +423,10 @@ def edit_submission(req, submission_id):
 def view_field(req, form_id, field_id):
     xform = XForm.on_site.get(pk=form_id)
     field = XFormField.objects.get(pk=field_id)
-    return render_to_response("xforms/field_view.html", 
+    return render_to_response("xforms/field_view.html",
         { 'xform': xform, 'field' : field },
         context_instance=RequestContext(req))
-    
+
 @csrf_exempt
 def edit_field (req, form_id, field_id):
     xform = XForm.on_site.get(pk=form_id)
@@ -439,17 +439,17 @@ def edit_field (req, form_id, field_id):
             field = form.save(commit=False)
             field.xform = xform
             field.save()
-            return render_to_response("xforms/field_view.html", 
+            return render_to_response("xforms/field_view.html",
                 { 'form' : form, 'xform' : xform, 'field' : field },
                 context_instance=RequestContext(req))
-        else:            return render_to_response("xforms/field_edit.html", 
+        else:            return render_to_response("xforms/field_edit.html",
                             { 'form' : form, 'xform': xform, 'field' : field },
                             context_instance=RequestContext(req))
     else:
         form = FieldForm(instance=field)
         form.updateTypes()
 
-    return render_to_response("xforms/field_edit.html", 
+    return render_to_response("xforms/field_edit.html",
         { 'form' : form, 'xform': xform, 'field' : field },
         context_instance=RequestContext(req))
 
@@ -458,7 +458,7 @@ def delete_xform (req, form_id):
     xform = XForm.on_site.get(pk=form_id)
     if req.method == 'POST':
         xform.delete()
-        
+
     return redirect("/xforms/")
 
 def delete_field (req, form_id, field_id):
@@ -467,7 +467,7 @@ def delete_field (req, form_id, field_id):
 
     if req.method == 'POST':
         field.delete()
-        
+
     return redirect("/xforms/%d/edit/" % xform.pk)
 
 @csrf_exempt
@@ -484,53 +484,53 @@ def add_constraint(req, form_id, field_id):
             constraint.field = field
             constraint.order = len(constraints)
             constraint.save()
-            return render_to_response("xforms/table_row_view.html", 
+            return render_to_response("xforms/table_row_view.html",
                 {'item' : constraint, 'columns': constraint_columns, 'buttons' : constraint_buttons, 'field' : field, 'xform' : xform },
                 context_instance=RequestContext(req))
     else:
         form = ConstraintForm()
 
-    return render_to_response("xforms/table_row_edit.html", 
+    return render_to_response("xforms/table_row_edit.html",
         { 'buttons' : add_button, 'form' : form, 'xform' : xform, 'field' : field },
         context_instance=RequestContext(req))
 
 @csrf_exempt
 def edit_constraint(req, form_id, field_id, constraint_id) :
-    
+
     xform = XForm.on_site.get(pk=form_id)
     field = XFormField.objects.get(pk=field_id)
     constraint = XFormFieldConstraint.objects.get(pk=constraint_id)
-    
+
     if req.method == 'POST':
         form = ConstraintForm(req.POST, instance=constraint)
         if form.is_valid():
             constraint = form.save(commit=False)
             constraint.field = field
             constraint.save()
-            return render_to_response("xforms/table_row_view.html", 
+            return render_to_response("xforms/table_row_view.html",
                 {  'columns' : constraint_columns, 'buttons' : constraint_buttons, 'item' : constraint, 'form' : form, 'xform' : xform, 'field' : field },
                 context_instance=RequestContext(req))
         else:
-            return render_to_response("xforms/table_row_edit.html", 
+            return render_to_response("xforms/table_row_edit.html",
                 { 'buttons' : save_button, 'item' : constraint, 'form' : form, 'xform' : xform, 'field' : field },
                 context_instance=RequestContext(req))
     else:
         form = ConstraintForm(instance=constraint)
-    
-    return render_to_response("xforms/table_row_edit.html", 
+
+    return render_to_response("xforms/table_row_edit.html",
         { 'buttons' : save_button, 'form' : form, 'xform': xform, 'field' : field, 'item' : constraint },
         context_instance=RequestContext(req))
 
 def view_constraint(req, form_id, field_id, constraint_id) :
-    
+
     xform = XForm.on_site.get(pk=form_id)
     field = XFormField.objects.get(pk=field_id)
     constraint = XFormFieldConstraint.objects.get(pk=constraint_id)
-    return render_to_response("xforms/table_row_view.html", 
+    return render_to_response("xforms/table_row_view.html",
         { 'columns' : constraint_columns, 'buttons' : constraint_buttons, 'item' : constraint, 'xform' : xform, 'field' : field },
         context_instance=RequestContext(req))
-    
-    
+
+
 def view_constraints(req, form_id, field_id):
     xform = XForm.on_site.get(pk=form_id)
     field = XFormField.objects.get(pk=field_id)
@@ -538,7 +538,7 @@ def view_constraints(req, form_id, field_id):
 
     breadcrumbs = (('XForms', '/xforms/'),(xform.name, "/xforms/%s/view/" % xform.pk), ("Constraints", ''))
 
-    return render_to_response("xforms/constraints.html", 
+    return render_to_response("xforms/constraints.html",
         {  'xform' : xform, 'field' : field, 'table' : constraints, 'buttons' : constraint_buttons, 'columns' : constraint_columns, 'breadcrumbs': breadcrumbs },
         context_instance=RequestContext(req))
 
@@ -546,7 +546,7 @@ def delete_constraint (req, form_id, field_id, constraint_id):
     constraint = XFormFieldConstraint.objects.get(pk=constraint_id)
     if req.method == 'POST':
         constraint.delete()
-        
+
     return redirect("/xforms/%s/field/%s/constraints/" % (form_id, field_id))
 
 def order_constraints (req, form_id, field_id):
@@ -558,13 +558,13 @@ def order_constraints (req, form_id, field_id):
             constraint.order = count
             count = count + 1
             constraint.save()
-            
-        return render_to_response("xforms/ajax_complete.html", 
+
+        return render_to_response("xforms/ajax_complete.html",
             {'ids' : constraint_ids},
             context_instance=RequestContext(req))
 
 
-add_button = ({ "image" : "rapidsms/icons/silk/decline.png", 'click' : 'cancelAdd'}, 
+add_button = ({ "image" : "rapidsms/icons/silk/decline.png", 'click' : 'cancelAdd'},
               { "text" : "Add", "image" : "rapidsms/icons/silk/add.png", 'click' : 'add'},)
 
 save_button = ( { "image" : "rapidsms/icons/silk/decline.png", 'click' : 'cancelSave'},
@@ -572,5 +572,3 @@ save_button = ( { "image" : "rapidsms/icons/silk/decline.png", 'click' : 'cancel
 constraint_buttons = ({"image" : "rapidsms/icons/silk/delete.png", 'click' : 'deleteRow'},
                       { "text" : "Edit", "image" : "rapidsms_xforms/icons/silk/pencil.png", 'click' : 'editRow'},)
 constraint_columns = (('Type', 'type'), ('Test', 'test'), ('Message', 'message'))
-
-
