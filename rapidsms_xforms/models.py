@@ -38,13 +38,13 @@ class XForm(models.Model):
     )
 
     name = models.CharField(max_length=32,
-                            help_text="Human readable name.")
+                            help_text="Give the form a name.")
     keyword = EavSlugField(max_length=32,
-                           help_text="The SMS keyword for this form, must be a slug.")
+                           help_text="Choose a short and simple keyword : 3 to 5 lowercase letters, no spaces or special character")
     description = models.TextField(max_length=255,
-                               help_text="The purpose of this form.")
+                               help_text="For your reference only. Write yourself a short campaign description")
     response = models.CharField(max_length=255,
-                                help_text="The response sent when this form is successfully submitted.")
+                                help_text="The SMS reply that the respondants will receive after submitting a form.")
     active = models.BooleanField(default=True,
                                  help_text="Inactive forms will not accept new submissions.")
 
@@ -58,9 +58,9 @@ class XForm(models.Model):
                                  help_text="The separator character for fields, field values will be split on this character.")
 
     restrict_to = models.ManyToManyField(Group, null=True, blank=True,
-                                         help_text="Restrict submissions to users of this group (if unset, anybody can submit this form)")
+                                         help_text="Limit your SMS responses to a group, or leave blank if you want an open survey")
     restrict_message = models.CharField(max_length=160, null=True, blank=True,
-                                        help_text="The error message that will be returned to users if they do not have the right privileges to submit this form.  Only required if the field is restricted.")
+                                        help_text="The SMS repondants will receive if they are not registered with the survey.")
 
     owner = models.ForeignKey(User)
     created = models.DateTimeField(auto_now_add=True)
